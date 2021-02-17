@@ -12,6 +12,7 @@ from get_saliency import *
 
 
 occlude = lambda I, mask: I*(1-mask) + gaussian_filter(I, sigma=3)*mask # choose an area to blur
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def test(env, trained_agent, n_steps_per_game=10000):
@@ -51,6 +52,10 @@ def main(env_name, checkpoint, num_frames, first_frame, resolution, save_dir, de
     meta = get_env_meta(env_name)
     N_STEPS_PER_GAME = 10000
 
+    # for i in range(2, 6):
+    # model_name = 'model_17_#{}'.format(i)
+    model_name = 'model_17_#1'
+
     # init a new agent
     trained_agent = DQNAgent(state_size=4,
                              action_size=env.action_space.n,
@@ -58,15 +63,15 @@ def main(env_name, checkpoint, num_frames, first_frame, resolution, save_dir, de
 
     # replace the weights with the trained weights
     trained_agent.qnetwork_local.load_state_dict(
-        torch.load('train/17_1_model.pth'))
+        torch.load('train/{}'.format(model_name), map_location=DEVICE))
 
     # enable inference mode
     trained_agent.qnetwork_local.eval()
 
     history = test(env, trained_agent, N_STEPS_PER_GAME)
 
-    movie_title = "{}-{}-{}.mp4".format(prefix, num_frames, env_name.lower())
-    print('\tmaking movie "{}" using checkpoint at {}'.format(movie_title, 'train/17_1_model.pth'))
+    movie_title = "{}-{}-{}-{}.mp4".format(prefix, num_frames, env_name.lower(), '{}'.format(model_name))
+    print('\tmaking movie "{}" using checkpoint at {}'.format(movie_title, 'train/{}'.format(model_name)))
 
     start = time.time()
     FFMpegWriter = manimation.writers['ffmpeg']
@@ -104,7 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--env', default='SpaceInvaders-v0', type=str, help='gym environment')
     parser.add_argument('-d', '--density', default=5, type=int, help='density of grid of gaussian blurs')
     parser.add_argument('-r', '--radius', default=5, type=int, help='radius of gaussian blur')
-    parser.add_argument('-f', '--num_frames', default=200, type=int, help='number of frames in movie')
+    parser.add_argument('-f', '--num_frames', default=20, type=int, help='number of frames in movie')
     parser.add_argument('-i', '--first_frame', default=150, type=int, help='index of first frame')
     parser.add_argument('-dpi', '--resolution', default=75, type=int, help='resolution (dpi)')
     parser.add_argument('-s', '--save_dir', default='movies/', type=str, help='dir to save agent logs and checkpoints')

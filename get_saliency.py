@@ -30,6 +30,7 @@ def run_through_model(model, history, ix, interp_func=None, mask=None, blur_memo
         im = interp_func(prepro(history['ins'][ix]).squeeze(), mask).reshape(1,80,80) # perturb input I -> I'
     # tens_state = torch.Tensor(im)
     # print(tens_state.size())
+    # print('im', im.shape)
     # state = Variable(tens_state.unsqueeze(0), volatile=True)
     # print(state.size())
     # hx = Variable(torch.Tensor(history['hx'][ix-1]).view(1,-1))
