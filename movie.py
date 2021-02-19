@@ -52,55 +52,62 @@ def main(env_name, checkpoint, num_frames, first_frame, resolution, save_dir, de
     meta = get_env_meta(env_name)
     N_STEPS_PER_GAME = 10000
 
+    import glob
+    model_type = 'dropout'
+    models = sorted(glob.glob('train/{}/*'.format(model_type)))
+    print(models)
+
     # for i in range(2, 6):
     # model_name = 'model_17_#{}'.format(i)
-    model_name = 'model_17_#1'
+    for model_name in models:
+        model_name = '{}/{}'.format(model_type, model_name.split('/')[-1])
 
-    # init a new agent
-    trained_agent = DQNAgent(state_size=4,
-                             action_size=env.action_space.n,
-                             seed=0)
+        # init a new agent
+        trained_agent = DQNAgent(state_size=4,
+                                 action_size=env.action_space.n,
+                                 seed=0)
 
-    # replace the weights with the trained weights
-    trained_agent.qnetwork_local.load_state_dict(
-        torch.load('train/{}'.format(model_name), map_location=DEVICE))
+        # replace the weights with the trained weights
+        trained_agent.qnetwork_local.load_state_dict(
+            torch.load('train/{}'.format(model_name), map_location=DEVICE))
 
-    # enable inference mode
-    trained_agent.qnetwork_local.eval()
+        # enable inference mode
+        trained_agent.qnetwork_local.eval()
 
-    history = test(env, trained_agent, N_STEPS_PER_GAME)
+        history = test(env, trained_agent, N_STEPS_PER_GAME)
 
-    movie_title = "{}-{}-{}-{}.mp4".format(prefix, num_frames, env_name.lower(), '{}'.format(model_name))
-    print('\tmaking movie "{}" using checkpoint at {}'.format(movie_title, 'train/{}'.format(model_name)))
+        movie_title = r"{}-{}-{}-{}-{}.mp4".format(model_type, prefix, num_frames, env_name.lower(), model_name.split('/')[-1])
+        print('\tmaking movie "{}" using checkpoint at {}'.format(movie_title, 'train/{}'.format(model_name)))
 
-    start = time.time()
-    FFMpegWriter = manimation.writers['ffmpeg']
-    metadata = dict(title=movie_title, artist='tgupta', comment='atari-saliency-video')
-    writer = FFMpegWriter(fps=8, metadata=metadata)
+        start = time.time()
+        FFMpegWriter = manimation.writers['ffmpeg']
+        metadata = dict(title=movie_title, artist='tgupta', comment='atari-saliency-video')
+        writer = FFMpegWriter(fps=8, metadata=metadata)
 
-    prog = ''
-    total_frames = len(history['ins'])
-    print(total_frames)
-    f = plt.figure(figsize=[6, 6 * 1.3], dpi=resolution)
-    with writer.saving(f, save_dir + movie_title, resolution):
-        for i in range(num_frames):
-            ix = first_frame + i
-            if ix < total_frames:  # prevent loop from trying to process a frame ix greater than rollout length
-                frame = history['ins'][ix].squeeze().copy()
-                actor_saliency = score_frame(trained_agent, history, ix, radius, density, interp_func=occlude, mode='actor')
-                # critic_saliency = score_frame(model, history, ix, radius, density, interp_func=occlude, mode='critic')
+        prog = ''
+        total_frames = len(history['ins'])
+        print(total_frames)
+        num_frames = total_frames
+        f = plt.figure(figsize=[6, 6 * 1.3], dpi=resolution)
+        with writer.saving(f, save_dir + movie_title, resolution):
+            for i in range(num_frames):
+                ix = first_frame + i
+                if ix < total_frames:  # prevent loop from trying to process a frame ix greater than rollout length
+                    frame = history['ins'][ix].squeeze().copy()
+                    actor_saliency = score_frame(trained_agent, history, ix, radius, density, interp_func=occlude, mode='actor')
+                    # critic_saliency = score_frame(model, history, ix, radius, density, interp_func=occlude, mode='critic')
 
-                frame = saliency_on_atari_frame(actor_saliency, frame, fudge_factor=meta['actor_ff'], channel=2)
-                # frame = saliency_on_atari_frame(critic_saliency, frame, fudge_factor=meta['critic_ff'], channel=0)
+                    frame = saliency_on_atari_frame(actor_saliency, frame, fudge_factor=meta['actor_ff'], channel=2)
+                    # frame = saliency_on_atari_frame(critic_saliency, frame, fudge_factor=meta['critic_ff'], channel=0)
 
-                plt.imshow(frame)
-                plt.title(env_name.lower(), fontsize=15)
-                writer.grab_frame()
-                f.clear()
+                    plt.imshow(frame)
+                    plt.title(env_name.lower(), fontsize=15)
+                    writer.grab_frame()
+                    f.clear()
 
-                tstr = time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - start))
-                print('\ttime: {} | progress: {:.1f}%'.format(tstr, 100 * i / min(num_frames, total_frames)), end='\r')
-    print('\nfinished.')
+                    tstr = time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - start))
+                    print('\ttime: {} | progress: {:.1f}%'.format(tstr, 100 * i / min(num_frames, total_frames)), end='\r')
+        print('\nfinished.')
 
 
 if __name__ == '__main__':

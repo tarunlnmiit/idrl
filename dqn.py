@@ -31,6 +31,29 @@ class DQN(nn.Module):
             512)  # flattening 3 frames of 128 kernels, of imgs of size 19x8
         self.fc2 = nn.Linear(512, action_size)  # 6 actions in space invaders
 
+        # dropout
+        # self.conv1 = nn.Conv2d(1, 32, 8, stride=4, padding=1)
+        # self.drop1 = nn.Dropout(p=0.2)
+        # self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
+        # self.drop2 = nn.Dropout(p=0.3)
+        # self.conv3 = nn.Conv2d(64, 128, 3)
+        # self.drop3 = nn.Dropout(p=0.4)
+        # self.fc1 = nn.Linear(
+        #     1 * 128 * 6 * 6,
+        #     512)  # flattening 3 frames of 128 kernels, of imgs of size 19x8
+        # self.fc2 = nn.Linear(512, action_size)  # 6 actions in space invaders
+
+        # maxpooling
+        # self.conv1 = nn.Conv2d(1, 32, 8, stride=4, padding=1)
+        # self.pool = nn.MaxPool2d(2,1)
+        # self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
+        # self.pool1 = nn.MaxPool2d(4,2)
+        # self.conv3 = nn.Conv2d(64, 128, 3)
+        # self.fc1 = nn.Linear(
+        #     1 * 128,
+        #     512)  # flattening 3 frames of 128 kernels, of imgs of size 19x8
+        # self.fc2 = nn.Linear(512, action_size)  # 6 actions in space invaders
+
     def forward(self, state):
         """
         mapping a state to action-values.
@@ -50,9 +73,30 @@ class DQN(nn.Module):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
-
+        
         # flatten the tensor for the fc layers
         x = x.view(-1, 128 * 6 * 6)
+
+        # # forward pass through conv layers
+        # x = F.relu(self.conv1(x))
+        # x = self.drop1(x)
+        # x = F.relu(self.conv2(x))
+        # x = self.drop2(x)
+        # x = F.relu(self.conv3(x))
+        # x = self.drop3(x)
+
+        # # flatten the tensor for the fc layers
+        # x = x.view(-1, 128*6*6)
+
+        # forward pass through conv layers
+        # x = F.relu(self.conv1(x))
+        # x = self.pool(x)
+        # x = F.relu(self.conv2(x))
+        # x = self.pool1(x)
+        # x = F.relu(self.conv3(x))
+
+        # # flatten the tensor for the fc layers
+        # x = x.view(-1, 128)
 
         # forward pass through fc layers
         x = F.relu(self.fc1(x))
